@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sampleapi-deployment
+  labels:
+    app: sampleapi
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sampleapi
+  template:
+    metadata:
+      labels:
+        app: sampleapi
+    spec:
+      containers:
+      - name: sampleapi
+        # Replace <YOUR_ACR_LOGIN_SERVER> and <IMAGE_TAG> with your values or use release pipeline variable substitution
+        image: <YOUR_ACR_LOGIN_SERVER>/sampleapi:<IMAGE_TAG>
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10

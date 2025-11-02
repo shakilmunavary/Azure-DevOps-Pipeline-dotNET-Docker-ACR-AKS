@@ -1,0 +1,76 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+variables:
+  imageName: sampleapi
+  # Set acrLoginServer and acrServiceConnection as pipeline variables or in a variable group.
+  # acrLoginServer example: myregistry.azurecr.io
+  # acrServiceConnection: name of the Azure DevOps service connection that can push to ACR
+  imageTag: $(Build.BuildId)
+  buildConfiguration: Release
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- task: UseDotNet@2
+  displayName: 'Install .NET SDK'
+  inputs:
+    packageType: sdk
+    version: '7.0.x'
+
+- script: |
+    dotnet restore
+  displayName: 'dotnet restore'
+
+- script: |
+    dotnet build --configuration $(buildConfiguration) --no-restore
+  displayName: 'dotnet build'
+
+- script: |
+    dotnet test --configuration $(buildConfiguration) --no-build --logger "trx"
+  displayName: 'dotnet test'
+
+- script: |
+    dotnet publish src/SampleApi/SampleApi.csproj -c $(buildConfiguration) -o $(Build.ArtifactStagingDirectory)/publish
+  displayName: 'dotnet publish'
+
+# Build and push Docker image to ACR using Docker task + service connection
+# You must create an Azure Resource Manager service connection or ACR service connection in Azure DevOps.
+- task: Docker@2
+  displayName: 'Build and push image to ACR'
+  inputs:
+    command: buildAndPush
+    containerRegistry: '$(acrServiceConnection)' # <-- set this variable to the service connection name
+    repository: '$(acrLoginServer)/$(imageName)'
+    dockerfile: 'Dockerfile'
+    tags: |
+      $(imageTag)
+
+# Save the image reference to a file so release pipelines can read it
+- script: |
+    echo "IMAGE=$(acrLoginServer)/$(imageName):$(imageTag)" > $(Build.ArtifactStagingDirectory)/image.txt
+    echo "Image saved to $(Build.ArtifactStagingDirectory)/image.txt"
+  displayName: 'Write image reference'
+
+# Copy k8s manifests to artifact staging so release pipelines can use them
+- script: |
+    mkdir -p $(Build.ArtifactStagingDirectory)/manifests
+    cp -r kubernetes/* $(Build.ArtifactStagingDirectory)/manifests/
+    # replace placeholder in manifests (optional): we leave placeholders; you can replace in release pipeline
+  displayName: 'Prepare k8s manifests'
+
+# Publish published app + manifests as a build artifact for Release pipeline consumption
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish build artifacts'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
