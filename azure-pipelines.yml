@@ -8,19 +8,18 @@ pool:
 
 variables:
   buildConfiguration: 'Release'
-  artifactFeed: 'TestPackageDot_Net'  # Replace with your Azure Artifacts feed name
+  artifactFeed: '<your-feed-name>'  # Replace with your Azure Artifacts feed name
 
 steps:
 - task: UseDotNet@2
   inputs:
     packageType: 'sdk'
-    version: '8.0.x'
+    version: '8.0.x'  # Adjust to your .NET SDK version
 
-- task: NuGetToolInstaller@1
-
-- task: NuGetRestore@1
+- task: DotNetCoreCLI@2
   inputs:
-    restoreSolution: '**/*.sln'
+    command: 'restore'
+    projects: '**/*.sln'
 
 - task: DotNetCoreCLI@2
   inputs:
