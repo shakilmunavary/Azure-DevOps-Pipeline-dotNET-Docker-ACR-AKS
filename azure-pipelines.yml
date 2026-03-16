@@ -1,42 +1,9 @@
 trigger:
-  branches:
-    include:
-      - main
+- main
 
 pool:
-  vmImage: 'windows-latest'
-
-variables:
-  buildConfiguration: 'Release'
-  artifactFeed: '<your-feed-name>'  # Replace with your Azure Artifacts feed name
+  vmImage: 'ubuntu-latest'
 
 steps:
-- task: UseDotNet@2
-  inputs:
-    packageType: 'sdk'
-    version: '8.0.x'  # Adjust to your .NET SDK version
-
-- task: DotNetCoreCLI@2
-  inputs:
-    command: 'restore'
-    projects: '**/*.sln'
-
-- task: DotNetCoreCLI@2
-  inputs:
-    command: 'build'
-    projects: '**/*.csproj'
-    arguments: '--configuration $(buildConfiguration)'
-
-- task: DotNetCoreCLI@2
-  inputs:
-    command: 'pack'
-    packagesToPack: '**/*.csproj'
-    versioningScheme: 'off'
-    configuration: '$(buildConfiguration)'
-    outputDir: '$(Build.ArtifactStagingDirectory)'
-
-- task: DotNetCoreCLI@2
-  inputs:
-    command: 'push'
-    publishVstsFeed: '$(artifactFeed)'
-    packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
+- script: echo "Hello"
+  displayName: 'Print Hello'
