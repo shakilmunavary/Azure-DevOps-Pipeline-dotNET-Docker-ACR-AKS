@@ -1,9 +1,23 @@
-trigger:
-- main
+parameters:
+  - name: jdkVersion
+    type: string
+    default: '1.11'
+  - name: goals
+    type: string
+    default: 'package'
 
-pool:
-  vmImage: 'ubuntu-latest'
-
-steps:
-- script: echo "Hello"
-  displayName: 'Print Hello'
+jobs:
+- job: MavenBuild
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+    - task: Maven@4
+      inputs:
+        mavenPomFile: 'pom.xml'
+        mavenOptions: '-Xmx3072m'
+        javaHomeOption: 'JDKVersion'
+        jdkVersionOption: ${{ parameters.jdkVersion }}
+        jdkArchitectureOption: 'x64'
+        publishJUnitResults: true
+        testResultsFiles: '**/surefire-reports/TEST-*.xml'
+        goals: ${{ parameters.goals }}
